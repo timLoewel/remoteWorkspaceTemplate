@@ -1,0 +1,33 @@
+name: start development server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r ../../infrastructure/developmentServer/scripts/requirements.txt
+
+    - name: Run Python script
+      run: python ../../infrastructure/developmentServer/scripts/create_small_development_server.py
+
+    # - name: Set up Ansible
+    #   uses: ansible/ansible@v2.9.0
+    #   with:
+    #     ansible-version: '2.9.0'
+
+    # - name: Install necessary dependencies
+    #   run: ansible-playbook ../infrastructure/developmentServer/ansible/playbook.yml
