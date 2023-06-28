@@ -17,9 +17,11 @@ servers_list = client.servers.get_list()
 for server in servers_list.servers:
         print("deleting server" + server.name)
         delete_server_response = server.delete()
-        delete_server_response.action.wait_until_finished()
-        wait_until_finished(delete_server_response.next_actions, "waiting for server to be deleted")
-        
+        if delete_server_response.action is not None:
+                delete_server_response.action.wait_until_finished()
+                print("server deleted")
+        if delete_server_response.next_actions is not None:
+                wait_until_finished(delete_server_response.next_actions, "waiting for server to be deleted")
                         
 
 # volumes_list = client.volumes.get_list()
