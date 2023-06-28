@@ -14,6 +14,9 @@ SSH_PUBLIC_KEY = os.getenv('SSH_PUBLIC_KEY')
 VOLUME_NAME="TimDevelopmentDrive"
 SERVER_NAME="TimDevelopmentServer"
 
+print("the variable SSH_PUBLIC_KEY is none? " + str(SSH_PUBLIC_KEY is None))
+print("the variable SERVER_NAME is none? " + str(SERVER_NAME is None))
+
 client = Client(token=HETZNER_API_TOKEN)
 existing_keys = client.ssh_keys.get_all()
 

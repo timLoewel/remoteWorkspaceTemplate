@@ -22,7 +22,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r ./infrastructure/developmentServer/scripts/requirements.txt
 
-    - name: Run Python script
+    - name: Start development server
+      env:
+        HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
       run: python ./infrastructure/developmentServer/scripts/create_small_development_server.py
 
     # - name: Set up Ansible
