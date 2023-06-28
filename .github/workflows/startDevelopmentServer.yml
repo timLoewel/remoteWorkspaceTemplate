@@ -18,11 +18,12 @@ jobs:
 
     - name: Install dependencies
       run: |
+        pwd
         python -m pip install --upgrade pip
-        pip install -r ../../infrastructure/developmentServer/scripts/requirements.txt
+        pip install -r ./infrastructure/developmentServer/scripts/requirements.txt
 
     - name: Run Python script
-      run: python ../../infrastructure/developmentServer/scripts/create_small_development_server.py
+      run: python ./infrastructure/developmentServer/scripts/create_small_development_server.py
 
     # - name: Set up Ansible
     #   uses: ansible/ansible@v2.9.0
