@@ -54,4 +54,7 @@ jobs:
     #     ansible-version: '2.9.0'
 
     - name: Install necessary dependencies
-      run: cd ./infrastructure/developmentServer/ansible ; ansible-playbook --user=root ./playbook.yml
+      env:
+        DEVELOPMENT_SERVER_SSH_PUBLIC_KEY: ${{secrets.DEVELOPMENT_SERVER_SSH_PUBLIC_KEY}}
+      run: | 
+        cd ./infrastructure/developmentServer/ansible ; ansible-playbook --user=root ./playbook.yml
