@@ -1,7 +1,11 @@
 name: start development server
 
 on:
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+# Only run one ansible job at a time
+concurrency: ansible
 
 jobs:
   run-scripts:
@@ -9,25 +13,48 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
     - name: Install dependencies
       run: |
+        pwd
         python -m pip install --upgrade pip
-        pip install -r ../../infrastructure/developmentServer/scripts/requirements.txt
+        pip install -r ./infrastructure/developmentServer/scripts/requirements.txt
 
-    - name: Run Python script
-      run: python ../../infrastructure/developmentServer/scripts/create_small_development_server.py
+    - name: Start development server
+      env:
+        HETZNER_API_TOKEN: ${{ secrets.HETZNER_API_TOKEN }}
+        DEVELOPMENT_SERVER_SSH_PUBLIC_KEY: ${{secrets.DEVELOPMENT_SERVER_SSH_PUBLIC_KEY}}
+      run: python ./infrastructure/developmentServer/scripts/create_small_development_server.py
 
+    - name: Configure ssh
+      run: |
+        mkdir ~/.ssh
+        cat << EOF > ~/.ssh/config
+        Host *
+          User root
+          LogLevel ERROR
+          StrictHostKeyChecking accept-new
+        EOF
+        echo "${{ secrets.DEVELOPMENT_SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    - name: Install ansible
+      run: |
+          pip install ansible ansible-lint passlib
+      
     # - name: Set up Ansible
     #   uses: ansible/ansible@v2.9.0
     #   with:
     #     ansible-version: '2.9.0'
 
-    # - name: Install necessary dependencies
-    #   run: ansible-playbook ../infrastructure/developmentServer/ansible/playbook.yml
+    - name: Install necessary dependencies
+      env:
+        DEVELOPMENT_SERVER_SSH_PUBLIC_KEY: ${{secrets.DEVELOPMENT_SERVER_SSH_PUBLIC_KEY}}
+      run: | 
+        cd ./infrastructure/developmentServer/ansible ; ansible-playbook --user=root ./playbook.yml
