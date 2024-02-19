@@ -31,7 +31,7 @@ print("creating server " + SERVER_NAME )
 create_server_response = client.servers.create(
     name = SERVER_NAME,
     server_type=ServerType(name="cx11"),
-    image=Image(name="ubuntu-20.04"),
+    image=Image(name="ubuntu-22.04"),
     ssh_keys=keys_for_server,
     datacenter=dc,
 )
