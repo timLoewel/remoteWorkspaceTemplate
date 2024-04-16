@@ -31,7 +31,7 @@ print("creating server " + SERVER_NAME )
 create_server_response = client.servers.create(
     name = SERVER_NAME,
     server_type=ServerType(name="cx11"),
-    image=Image(name="ubuntu-20.04"),
+    image=Image(name="ubuntu-22.04"),
     ssh_keys=keys_for_server,
     datacenter=dc,
 )
@@ -41,14 +41,20 @@ wait_until_finished(create_server_response.next_actions, "waiting for server nex
 
 
 new_server = client.servers.get_by_name(SERVER_NAME)
-new_server.model.
+
 volume = client.volumes.get_by_name(VOLUME_NAME)
+# if volume does not exist, create it
+if volume is None:
+	create_volume_response = client.volumes.create(name=VOLUME_NAME, size=10, server=new_server, format="ext4", automount=True)
+	wait_until_finished(create_volume_response.actions, "waiting for server to be created")
+	wait_until_finished(create_volume_response.next_actions, "waiting for server next actions to be finished")
+
 print("volume " + str(volume.model.name))
 # create_volume_response = client.volumes.create(name=volume_name, size=10, server=new_server, format="ext4", automount=True,
 # )
 # wait_until_finished(create_volume_response.actions, "waiting for server to be created")
 # wait_until_finished(create_volume_response.next_actions, "waiting for server next actions to be finished")
-                                               
+
 
 volume.attach(new_server, automount=True)
 
@@ -57,7 +63,17 @@ volume.attach(new_server, automount=True)
 print("new server can be found under")
 print(new_server.public_net.ipv4.dns_ptr)
 
-#  write the new server to the inventory file
-f = open('../ansible/inventory', 'w', encoding="utf-8")
-f.write(new_server.public_net.ipv4.dns_ptr + "\n")
-f.close()
+# install nixos on the server by copying the configuration over and calling the nixos-install script
+# first create the nixos directory
+subprocess.call(["ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-i", DEVELOPMENT_SERVER_SSH_PUBLIC_KEY, "root@" + new_server.public_net.ipv4.ip, "mkdir", "-p", "/etc/nixos"])
+# then copy the configuration to the server
+subprocess.call(["scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-i", DEVELOPMENT_SERVER_SSH_PUBLIC_KEY, "../config/configuration.nix", "root@" + new_server.public_net.ipv4.ip + ":/etc/nixos/configuration.nix"])
+
+# then copy the user-configuration to the server
+subprocess.call(["scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-i", DEVELOPMENT_SERVER_SSH_PUBLIC_KEY, "../config/user-configuration.nix", "root@" + new_server.public_net.ipv4.ip + ":/etc/nixos/user-configuration.nix"])
+
+# then copy the nixos-infect script to the server
+subprocess.call(["scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-i", DEVELOPMENT_SERVER_SSH_PUBLIC_KEY, "../config/nixos-infect.sh", "root@" + new_server.public_net.ipv4.ip + ":/root/nixos-infect.sh"])
+
+# then execute the nixos-infect script on the server
+subprocess.call(["ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-i", DEVELOPMENT_SERVER_SSH_PUBLIC_KEY, "root@" + new_server.public_net.ipv4.ip, "/root/nixos-infect.sh | PROVIDER=hetznercloud NIX_CHANNEL=nixos-23.11 bash 2>&1 | tee /tmp/infect.log"])
